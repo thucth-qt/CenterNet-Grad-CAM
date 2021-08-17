@@ -5,3 +5,7 @@ progress
 matplotlib
 easydict
 scipy
+torch==1.9
+torchvision
+pycocotools
+scikit-image

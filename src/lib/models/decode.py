@@ -461,12 +461,12 @@ def ddd_decode(heat, rot, depth, dim, wh=None, reg=None, K=40):
       
     return detections
 
-def ctdet_decode(heat, wh, reg=None, cat_spec_wh=False, K=100):
-    batch, cat, height, width = heat.size()
+def ctdet_decode(heat_in, wh, reg=None, cat_spec_wh=False, K=100):
+    batch, cat, height, width = heat_in.size()
 
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
-    heat = _nms(heat)
+    heat = _nms(heat_in)
       
     scores, inds, clses, ys, xs = _topk(heat, K=K)
     if reg is not None:
@@ -485,12 +485,12 @@ def ctdet_decode(heat, wh, reg=None, cat_spec_wh=False, K=100):
     else:
       wh = wh.view(batch, K, 2)
     clses  = clses.view(batch, K, 1).float()
-    scores = scores.view(batch, K, 1)
+    scores_ret = scores.view(batch, K, 1)
     bboxes = torch.cat([xs - wh[..., 0:1] / 2, 
                         ys - wh[..., 1:2] / 2,
                         xs + wh[..., 0:1] / 2, 
                         ys + wh[..., 1:2] / 2], dim=2)
-    detections = torch.cat([bboxes, scores, clses], dim=2)
+    detections = torch.cat([bboxes, scores_ret, clses], dim=2)
       
     return detections
 

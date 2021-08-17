@@ -11,7 +11,7 @@ import torch
 from models.model import create_model, load_model
 from utils.image import get_affine_transform
 from utils.debugger import Debugger
-
+from utils.grad_cam import Grad_CAM
 
 class BaseDetector(object):
   def __init__(self, opt):
@@ -33,6 +33,20 @@ class BaseDetector(object):
     self.scales = opt.test_scales
     self.opt = opt
     self.pause = True
+
+    self.cam_layers = [
+      # "conv1",
+      # "layer1.0.conv1",
+      # "layer2.0",
+      # "layer3.0",
+      "layer4.0",
+      # "layer4.0.conv1",
+      # "layer4.0.conv2",
+      # "layer4.1",
+      # "deconv_layers.15",
+      # "hm.0", #set inplace=True as inplace=False in the model py
+    ]
+    print(self.model)
 
   def pre_process(self, image, scale, meta=None):
     height, width = image.shape[0:2]
@@ -61,7 +75,9 @@ class BaseDetector(object):
     images = torch.from_numpy(images)
     meta = {'c': c, 's': s, 
             'out_height': inp_height // self.opt.down_ratio, 
-            'out_width': inp_width // self.opt.down_ratio}
+            'out_width': inp_width // self.opt.down_ratio,
+            'trans_input': trans_input,
+            'down_ratio':self.opt.down_ratio}
     return images, meta
 
   def process(self, images, return_time=False):
@@ -113,7 +129,21 @@ class BaseDetector(object):
       pre_process_time = time.time()
       pre_time += pre_process_time - scale_start_time
       
+      if self.opt.grad_cam:
+        self.grad_cam = Grad_CAM()
+        self.grad_cam.grad_cam_register(self.model, self.cam_layers)
+
       output, dets, forward_time = self.process(images, return_time=True)
+
+      if self.opt.grad_cam:
+        select_dets = dets[dets[:,:,4] >= self.opt.vis_thresh]
+        for s_det in select_dets:
+          if len(self.opt.classes) > 0 and int(s_det[5].cpu().detach().item()) not in self.opt.classes:
+            continue
+          s_det[4].backward(retain_graph=True)
+        if type(image_or_path_or_tensor) == type (''): 
+          self.grad_cam.save_cam("./cam_output", image_or_path_or_tensor, meta)
+        self.grad_cam.grad_cam_remove()
 
       torch.cuda.synchronize()
       net_time += forward_time - pre_process_time

@@ -24,8 +24,29 @@ from .base_detector import BaseDetector
 class CtdetDetector(BaseDetector):
   def __init__(self, opt):
     super(CtdetDetector, self).__init__(opt)
-  
+
+  def ctdet_precess_grad_cam(self, images, return_time=False):
+    with torch.enable_grad():
+      output = self.model(images)[-1]
+      hm = output['hm'].sigmoid_()
+      wh = output['wh']
+      reg = output['reg'] if self.opt.reg_offset else None
+      if self.opt.flip_test:
+        hm = (hm[0:1] + flip_tensor(hm[1:2])) / 2
+        wh = (wh[0:1] + flip_tensor(wh[1:2])) / 2
+        reg = reg[0:1] if reg is not None else None
+    torch.cuda.synchronize()
+    forward_time = time.time()
+    dets = ctdet_decode(hm, wh, reg=reg, cat_spec_wh=self.opt.cat_spec_wh, K=self.opt.K)
+      
+    if return_time:
+      return output, dets, forward_time
+    else:
+      return output, dets
+
   def process(self, images, return_time=False):
+    if self.opt.grad_cam:
+      return self.ctdet_precess_grad_cam(images, return_time)
     with torch.no_grad():
       output = self.model(images)[-1]
       hm = output['hm'].sigmoid_()
@@ -35,9 +56,9 @@ class CtdetDetector(BaseDetector):
         hm = (hm[0:1] + flip_tensor(hm[1:2])) / 2
         wh = (wh[0:1] + flip_tensor(wh[1:2])) / 2
         reg = reg[0:1] if reg is not None else None
-      torch.cuda.synchronize()
-      forward_time = time.time()
-      dets = ctdet_decode(hm, wh, reg=reg, cat_spec_wh=self.opt.cat_spec_wh, K=self.opt.K)
+    torch.cuda.synchronize()
+    forward_time = time.time()
+    dets = ctdet_decode(hm, wh, reg=reg, cat_spec_wh=self.opt.cat_spec_wh, K=self.opt.K)
       
     if return_time:
       return output, dets, forward_time
@@ -93,4 +114,4 @@ class CtdetDetector(BaseDetector):
       for bbox in results[j]:
         if bbox[4] > self.opt.vis_thresh:
           debugger.add_coco_bbox(bbox[:4], j - 1, bbox[4], img_id='ctdet')
-    debugger.show_all_imgs(pause=self.pause)
+    # debugger.show_all_imgs(pause=self.pause)
