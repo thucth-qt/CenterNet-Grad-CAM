@@ -39,12 +39,15 @@ class BaseDetector(object):
       # "layer1.0.conv1",
       # "layer2.0",
       # "layer3.0",
-      "layer4.0",
+      "layer3.1"
+      # "layer4.0",
       # "layer4.0.conv1",
       # "layer4.0.conv2",
       # "layer4.1",
-      # "deconv_layers.15",
-      # "hm.0", #set inplace=True as inplace=False in the model py
+      # "deconv_layers.6",
+      # "reg.2"
+      # "hm.2"
+      # "hm.0", #set inplace=False as inplace=True in the model py
     ]
     print(self.model)
 

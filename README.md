@@ -12,12 +12,11 @@ https://github.com/yizt/Grad-CAM.pytorch
 
 1. Install Pytorch 1.9
 2. git clone https://github.com/JasperMorrison/CenterNet -b grad_cam
-3. cd src/lib/models/networks/DCNv2/;rm DCNv2 -rf;
-4. git clone https://github.com/jinfagang/DCNv2_latest DCNv2
-5. cd DCNv2; vi make.sh; remove the sudo cmd prefix
-6. ./make.sh
+3. cd src/lib/models/networks/DCNv2/;rm-rf *;
+4. git clone https://github.com/tteepe/DCNv2.git dcn_v2
+5. cd dcn_v2; python setup.py develop
 7. Download CenterNet pretrained model (refs to branch master);
-
+                                                                                                  
 # Set hook layers
 
 Add layer name to self.cam_layers in base_detector.py
@@ -48,3 +47,4 @@ Add layer name to self.cam_layers in base_detector.py
 
 ![](./grad_cam_3.jpg)
 
+                                                                                                  

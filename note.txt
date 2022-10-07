@@ -1,0 +1,1 @@
+python demo.py ctdet --demo /home/thucth/thucth/project/CenterNet-Grad-CAM/test_imgs --load_model /home/thucth/thucth/project/CenterNet-Grad-CAM/models/model_220919.pth --arch res_18 --grad_cam
